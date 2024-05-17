@@ -81,7 +81,7 @@ def query_data(
         return raw_data
     except Exception as e:
         raise e
-    
+
 
 def get_timestamps(raw_data: pd.DataFrame, duration: int = 10) -> tuple[str, str]:
     """Returns the starting and ending timestamps, which will be used to filter 'raw_data'
@@ -98,9 +98,7 @@ def get_timestamps(raw_data: pd.DataFrame, duration: int = 10) -> tuple[str, str
         max_ts: str = str(
             pd.to_datetime(raw_data.iloc[-1]["datetime"]) - timedelta(days=duration + 2)
         )
-        timestamps: list[str] = [
-            str(ts) for ts in pd.date_range(min_ts, max_ts, freq="H")
-        ]
+        timestamps: list[str] = [str(ts) for ts in pd.date_range(min_ts, max_ts, freq="H")]
         start: str = random.choice(timestamps)
         end: str = str(pd.to_datetime(start) + timedelta(days=duration))
         return start, end
@@ -169,6 +167,5 @@ def ingest_data(query_id: str) -> tuple[pd.DataFrame, str]:
 
 
 if __name__ == "__main__":
-    ids: list[str] = query_ids()
-    df_stationary, target = ingest_data(random.choice(ids))
+    df_stationary, target = ingest_data(random.choice(query_ids()))
     print(df_stationary.head())
