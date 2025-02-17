@@ -16,3 +16,21 @@ data:
   timestamp_column: timestamp_utc
   offset_timestamp: 2025-01-01 00:00:00
   utc_to_est: -5
+model:
+  n_splits: 5
+  train_size: 0.8
+  CatBoostRegressor:
+    loss_function: RMSE
+    silent: True
+    thread_count: -1
+  LGBMRegressor:
+    objective: regression
+    metric: rmse
+    early_stopping_rounds: 50
+    verbosity: -1
+    n_jobs: -1
+  XGBRegressor:
+    objective: reg:squarederror
+    eval_metric: rmse
+    early_stopping_rounds: 50
+    n_jobs: -1
