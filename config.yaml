@@ -1,0 +1,18 @@
+database:
+  drivername: postgresql
+  host: localhost
+  dbname: postgres
+  user: postgres
+  port: 5432
+  schema: time_series
+  table:
+    name: energy_demand
+    columns:
+        - company_id
+        - timestamp_utc
+        - energy_demand_mw
+data:
+  target_column: energy_demand_mw
+  timestamp_column: timestamp_utc
+  offset_timestamp: 2025-01-01 00:00:00
+  utc_to_est: -5
