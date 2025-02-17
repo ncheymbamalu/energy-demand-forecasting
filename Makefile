@@ -1,4 +1,6 @@
-.PHONY: install check clean database
+.PHONY: install check clean database monitor runner
+
+.DEFAULT_GOAL:=runner
 
 install: pyproject.toml
 	uv venv; source .venv/bin/activate
@@ -15,3 +17,8 @@ clean:
 
 database: check
 	uv run python src/database.py
+
+monitor: check
+	uv run python src/monitor.py
+
+runner: monitor clean
