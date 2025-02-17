@@ -210,13 +210,9 @@ def build_model(data: pd.DataFrame) -> CatBoostRegressor | LGBMRegressor | XGBRe
             .sort_values("rmse")
             .index[0]
         )
-
-        # save the trained model that produced the 'best' metric to Paths.MODEL
         logger.info(
-            f"Training complete. The '{best_model}' produced the lowest average validation RMSE, \
-and will be saved to ~/{Paths.MODEL.parent.name}/{Paths.MODEL.name}."
+            f"Training complete. The '{best_model}' produced the lowest average validation RMSE."
         )
-        save_model(models.get(best_model))
         return models.get(best_model)
     except Exception as e:
         raise e
@@ -340,15 +336,12 @@ def tune_model(
         model = (
             CatBoostRegressor(**(tuned_params | {"silent": True}))
             if isinstance(model, CatBoostRegressor)
-            else LGBMRegressor(**tuned_params) if isinstance(model, LGBMRegressor)
+            else LGBMRegressor(**(tuned_params | {"verbosity": -1}))
+            if isinstance(model, LGBMRegressor)
             else XGBRegressor(**tuned_params)
         )
         model.fit(data[features], data[target_col])
-        logger.info(
-            f"Hyperparameter tuning complete. The 'tuned' model will be saved \
-to ~/{Paths.MODEL.parent.name}/{Paths.MODEL.name}."
-        )
-        save_model(model)
+        logger.info("Hyperparameter tuning complete.")
         return model
     except Exception as e:
         raise e
