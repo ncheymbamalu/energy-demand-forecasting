@@ -1,6 +1,6 @@
-.PHONY: install check clean database monitor runner
+.PHONY: install check clean database monitor runner_database runner_monitor
 
-.DEFAULT_GOAL:=runner
+.DEFAULT_GOAL:=runner_monitor
 
 install: pyproject.toml
 	uv venv; source .venv/bin/activate
@@ -15,10 +15,12 @@ clean:
 	rm -rf `find . -type d -name catboost_info`
 	rm -rf .ruff_cache
 
-database: check
+database:
 	uv run python src/database.py
 
-monitor: check
+monitor:
 	uv run python src/monitor.py
 
-runner: monitor clean
+runner_database: check database clean
+
+runner_monitor: check monitor clean

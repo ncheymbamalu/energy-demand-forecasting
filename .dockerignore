@@ -1,0 +1,11 @@
+# ignore everything
+*
+
+# except these items
+!README.md
+!pyproject.toml
+!uv.lock
+!Makefile
+!config.yaml
+!src/
+!artifacts/
