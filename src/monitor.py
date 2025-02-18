@@ -44,7 +44,7 @@ def backtest_model(
                 for company_id in sorted(data["company_id"].unique())
             }
 
-            # iterate over each ID and create a test set
+            # iterate over each ID and create its train and test sets
             dfs: list[tuple[pd.DataFrame, pd.DataFrame]] = [
                 (
                     data.query(
