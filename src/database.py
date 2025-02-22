@@ -8,16 +8,13 @@ from pathlib import Path
 import pandas as pd
 
 from dotenv import load_dotenv
-from omegaconf import DictConfig, ListConfig
+from omegaconf import ListConfig
 from sqlalchemy import URL, Connection, create_engine, text
 
-from src.config import Paths, load_config
+from src.config import Paths, db_config
 from src.logger import logger
 
 load_dotenv(Paths.ENV)
-
-
-DB_CONFIG: DictConfig = load_config().database
 
 
 def get_db_connection() -> Connection:
@@ -29,11 +26,11 @@ def get_db_connection() -> Connection:
     """
     try:
         url: URL = URL.create(
-            drivername=DB_CONFIG.drivername,
-            username=DB_CONFIG.user,
-            host=DB_CONFIG.host,
-            database=DB_CONFIG.dbname,
-            port=DB_CONFIG.port,
+            drivername=db_config.drivername,
+            username=db_config.user,
+            host=db_config.host,
+            database=db_config.dbname,
+            port=db_config.port,
             password=os.getenv("PG_PASSWORD")
         )
         db_connection: Connection = create_engine(url).connect()
@@ -42,11 +39,11 @@ def get_db_connection() -> Connection:
         raise e
 
 
-def create_schema(schema: str = DB_CONFIG.schema) -> None:
+def create_schema(schema: str = db_config.schema) -> None:
     """Creates a schema named, 'time_series', under the 'postgres' database.
 
     Args:
-        schema (str, optional): Db schema. Defaults to DB_CONFIG.schema, that is, 'time_series'.
+        schema (str, optional): Db schema. Defaults to db_config.schema, that is, 'time_series'.
     """
     try:
         db_connection: Connection = get_db_connection()
@@ -58,13 +55,13 @@ def create_schema(schema: str = DB_CONFIG.schema) -> None:
 
 
 @logger.catch
-def create_table(schema: str = DB_CONFIG.schema, table: str = DB_CONFIG.table.name) -> None:
+def create_table(schema: str = db_config.schema, table: str = db_config.table.name) -> None:
     """Creates a table named, 'energy_demand', which exists under the 'postgres' database's
     'time_series' schema, and populates it with raw data from ~/data/*.parquet.
 
     Args:
-        schema (str, optional): Database schema. Defaults to DB_CONFIG.schema.
-        table (str, optional): Database table. Defaults to DB_CONFIG.table.name.
+        schema (str, optional): Database schema. Defaults to db_config.schema.
+        table (str, optional): Database table. Defaults to db_config.table.name.
     """
     try:
         # create the table
@@ -82,7 +79,7 @@ def create_table(schema: str = DB_CONFIG.schema, table: str = DB_CONFIG.table.na
         db_connection.commit()
 
         # populate the table with raw data from ~/data/*.parquet
-        cols: ListConfig = DB_CONFIG.table.columns
+        cols: ListConfig = db_config.table.columns
         dfs: list[pd.DataFrame] = [
             (
                 pd.read_parquet(path)
@@ -105,27 +102,9 @@ def create_table(schema: str = DB_CONFIG.schema, table: str = DB_CONFIG.table.na
         )
         db_connection.close()
         logger.info(
-            f"SUCCESS: The '{DB_CONFIG.dbname}' database's '{schema}.{table}' table has been \
+            f"SUCCESS: The '{db_config.dbname}' database's '{schema}.{table}' table has been \
 created and populated with raw data."
         )
-    except Exception as e:
-        raise e
-
-
-def query_data(query: str) -> pd.DataFrame:
-    """Queries data from a SQL database and returns it as a pd.DataFrame.
-
-    Args:
-        query (str): SQL query.
-
-    Returns:
-        pd.DataFrame: Queried data
-    """
-    try:
-        db_connection: Connection = get_db_connection()
-        data: pd.DataFrame = pd.DataFrame(db_connection.execute(text(query)))
-        db_connection.close()
-        return data
     except Exception as e:
         raise e
 

@@ -2,43 +2,44 @@
 
 import pandas as pd
 
-from omegaconf import DictConfig, ListConfig
+from omegaconf import ListConfig
 
-from src.config import load_config
-from src.database import DB_CONFIG, query_data
+from src.config import data_config, db_config
 from src.logger import logger
+from src.utils import create_features, query_data
 
-DATA_CONFIG: DictConfig = load_config().data
 
-
+# -------------------------------------------------------------------------------------------------
+# Data ingestion, pre-processing, and validation
+# -------------------------------------------------------------------------------------------------
 @logger.catch
 def fetch_data(
-    target_col: str = DATA_CONFIG.target_column,
-    timestamp_col: str = DATA_CONFIG.timestamp_column,
-    offset_timestamp: str = DATA_CONFIG.offset_timestamp,
+    target_col: str = data_config.target_column,
+    timestamp_col: str = data_config.timestamp_column,
+    offset_timestamp: str = data_config.offset_timestamp,
     duration: int = 14
 ) -> pd.DataFrame:
     """Fetches raw hourly energy demand data from a PostgreSQL database, pre-processes,
     validates, and returns it as a pd.DataFrame.
 
     Args:
-        target_col (str, optional): Name of the column that contains the 1-D time series,
-        i.e., the target variable. Defaults to DATA_CONFIG.target_column.
+        target_col (str, optional): Name of the target variable.
+        Defaults to data_config.target_column.
         timestamp_col (str, optional): Name of the column that contains the timestamps.
-        Defaults to DATA_CONFIG.timestamp_column.
+        Defaults to data_config.timestamp_column.
         offset_timestamp (str, optional): Timestamp that's used to compute the number of days
         each company's timestamps will be offset into the future, in order to synthesize a
-        real-time data ingestion scenario. Defaults to DATA_CONFIG.offset_timestamp.
+        real-time data ingestion scenario. Defaults to data_config.offset_timestamp.
         duration (int, optional): The amount of pre-processed and validated data that's returned
-        for each company, in days. Defaults to 28.
+        for each company, in days. Defaults to 14.
 
     Returns:
         pd.DataFrame: Pre-processed and validated data.
     """
     try:
         logger.info(
-            f"Fetching raw data from the '{DB_CONFIG.dbname}' database's \
-'{DB_CONFIG.schema}.{DB_CONFIG.table.name}' table."
+            f"Fetching raw data from the '{db_config.dbname}' database's \
+'{db_config.schema}.{db_config.table.name}' table."
         )
         # a dictionary that maps each company ID to the number of days to add to its min timestamp
         # NOTE: this is done to synthesize a real-time data ingestion scenario
@@ -50,7 +51,7 @@ def fetch_data(
                     SELECT
                         company_id,
                         MIN(timestamp_utc) AS min_timestamp
-                    FROM {DB_CONFIG.dbname}.{DB_CONFIG.schema}.{DB_CONFIG.table.name}
+                    FROM {db_config.dbname}.{db_config.schema}.{db_config.table.name}
                     GROUP BY 1
                     ORDER BY 1
                 )
@@ -69,7 +70,7 @@ def fetch_data(
 
         # query each company's 'real-time' raw data, then pre-process and validate it, that is, ...
         # ensure that time steps are regularly spaced, and all nulls and duplicates and removed
-        cols: ListConfig = DB_CONFIG.table.columns
+        cols: ListConfig = db_config.table.columns
         dfs: list[pd.DataFrame] = []
         for company_id, n_days in future_mapper.items():
             data: pd.DataFrame = (
@@ -82,7 +83,7 @@ def fetch_data(
                             {timestamp_col} + INTERVAL '{n_days}' DAY AS {timestamp_col},
                             {target_col},
                             ROW_NUMBER() OVER (PARTITION BY {timestamp_col}) AS rn
-                        FROM {DB_CONFIG.dbname}.{DB_CONFIG.schema}.{DB_CONFIG.table.name}
+                        FROM {db_config.dbname}.{db_config.schema}.{db_config.table.name}
                         WHERE company_id = '{company_id}'
                     )
                     SELECT
@@ -120,98 +121,14 @@ INTERVAL '{duration}' DAY AND DATE_TRUNC('hour', TIMEZONE('UTC', NOW()))
         raise e
 
 
-def create_features(
-    data: pd.DataFrame,
-    company_id: str,
-    target_col: str = DATA_CONFIG.target_column,
-    timestamp_col: str = DATA_CONFIG.timestamp_column,
-    max_lag: int = 24
-) -> pd.DataFrame:
-    """Creates lag features, window features, and datetime features from a 1-D time series.
-
-    Args:
-        data (pd.DataFrame): DataFrame containing a 1-D time series of validated and
-        pre-processed hourly energy demand data.
-        company_id (str): ID of the company whose data to create features for.
-        target_col (str, optional): Name of the column that contains the 1-D time series,
-        i.e., the target variable. Defaults to DATA_CONFIG.target_column.
-        timestamp_col (str, optional): Name of the column that contains the timestamps.
-        Defaults to DATA_CONFIG.timestamp_column.
-        max_lag (int, optional): Maximum number of lag features to create. Defaults to 24.
-
-    Returns:
-        pd.DataFrame: DataFrame containing the lag features, window features, and
-        datetime features for the input company ID.
-    """
-    try:
-        # create the lag features
-        dfs: list[pd.DataFrame] = [
-            (
-                data
-                .query(f"company_id == '{company_id}'")
-                .sort_values(by=timestamp_col)
-                .set_index(timestamp_col)
-                [target_col]
-                .shift(periods=lag)
-                .to_frame(name=f"lag_{lag}")
-            )
-            for lag in reversed(range(1, max_lag + 1))
-        ]
-        df_lag: pd.DataFrame = pd.concat(dfs, axis=1).dropna()
-
-        # create the window features
-        # NOTE: the start/step, which is hardcoded and set equal to 4, is a hyperparameter; ...
-        # however, different values should be tested, and the values that are tested should be ...
-        # a factor of the max_lag
-        start = step = 4
-        dfs = []
-        for lag in reversed(range(start, max_lag + 1, step)):
-            df_mean: pd.DataFrame = (
-                df_lag.iloc[:, -lag:].mean(axis=1).to_frame(name=f"mean_{lag}_lags")
-            )
-            df_std: pd.DataFrame = (
-                df_lag.iloc[:, -lag:].std(axis=1).to_frame(name=f"std_{lag}_lags")
-            )
-            dfs.append(pd.concat((df_mean, df_std), axis=1))
-        df_window: pd.DataFrame = pd.concat(dfs, axis=1)
-
-        # create the datetime features
-        df_datetime: pd.DataFrame = pd.DataFrame(
-            data={
-                "day_of_week": [idx + 1 for idx in df_lag.index.day_of_week],
-                "time_of_day": [
-                    1 if hour in range(5, 12)  # morning
-                    else 2 if hour in range(12, 17)  # afternoon
-                    else 3 if hour in range(17, 21)  # evening
-                    else 4  # night
-                    for hour in (df_lag.index.hour + DATA_CONFIG.utc_to_est)
-                ],
-                "hour": df_lag.index.hour
-            },
-            index=df_lag.index
-        )
-        output_cols: list[str] = (
-            ["company_id", timestamp_col]
-            + df_datetime.columns.tolist()
-            + df_window.columns.tolist()
-            + df_lag.columns.tolist()
-        )
-        return (
-            pd.concat((df_datetime, df_window, df_lag), axis=1)
-            .assign(company_id=company_id)
-            .sort_index()
-            .reset_index()
-            [output_cols]
-        )
-    except Exception as e:
-        raise e
-
-
+# -------------------------------------------------------------------------------------------------
+# Data transformation
+# -------------------------------------------------------------------------------------------------
 @logger.catch
 def transform_data(
     data: pd.DataFrame,
-    target_col: str = DATA_CONFIG.target_column,
-    timestamp_col: str = DATA_CONFIG.timestamp_column
+    target_col: str = data_config.target_column,
+    timestamp_col: str = data_config.timestamp_column
 ) -> pd.DataFrame:
     """Transforms pre-processed and validated hourly energy demand data into an ML-ready
     dataset that contains datetime features, window features, lag features, and the
@@ -220,10 +137,10 @@ def transform_data(
     Args:
         data (pd.DataFrame): DataFrame containing a 1-D time series of pre-processed and
         validated hourly energy demand data.
-        target_col (str, optional): Name of the column that contains the 1-D time series,
-        i.e., the target variable. Defaults to DATA_CONFIG.target_column.
+        target_col (str, optional): Name of the target variable.
+        Defaults to data_config.target_column.
         timestamp_col (str, opitonal): Name of the column that contains the timestamps.
-        Defaults to DATA_CONFIG.timestamp_column.
+        Defaults to data_config.timestamp_column.
 
     Returns:
         pd.DataFrame: ML-ready dataset that contains datetime features, window features, lag

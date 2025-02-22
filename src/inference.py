@@ -9,7 +9,7 @@ from catboost import CatBoostRegressor
 from lightgbm import LGBMRegressor
 from xgboost import XGBRegressor
 
-from src.data import DATA_CONFIG
+from src.config import data_config
 from src.logger import logger
 from src.model import load_model
 
@@ -34,19 +34,19 @@ class NaiveForecast:
 
 def generate_one_step_forecast(
     data: pd.DataFrame,
-    target_col: str = DATA_CONFIG.target_column,
-    timestamp_col: str = DATA_CONFIG.timestamp_column
+    target_col: str = data_config.target_column,
+    timestamp_col: str = data_config.timestamp_column
 ) -> pd.DataFrame:
     """Returns a pd.DataFrame that contains each company ID's one-step forecast, that is,
-    its predicted energy demand for the upcoming hour.
+    the predicted energy demand for the upcoming hour.
 
     Args:
         data (pd.DataFrame): ML-ready dataset containing datetime features, window
         features, lag features, and the corresponding target.
-        target_col (str, optional): Name of the column that contains the target variable.
-        Defaults to DATA_CONFIG.target_column.
+        target_col (str, optional): Name of the target variable.
+        Defaults to data_config.target_column.
         timestamp_col (str, optional): Name of the column that contains the timestamps.
-        Defaults to DATA_CONFIG.timestamp_column.
+        Defaults to data_config.timestamp_column.
 
     Returns:
         pd.DataFrame: Dataset containing the one-step (one hour) forecasted energy demand
@@ -86,7 +86,7 @@ def generate_one_step_forecast(
 
             # create the forecasted record's timestamp and corresponding datetime features
             timestamp: pd.Timestamp = x.squeeze()[timestamp_col] + pd.Timedelta(hours=1)
-            est_hour: int = timestamp.hour + DATA_CONFIG.utc_to_est
+            est_hour: int = timestamp.hour + data_config.utc_to_est
             x_datetime: list[int] = [
                 timestamp.day_of_week + 1,
                 1 if est_hour in range(5, 12)  # morning
@@ -129,8 +129,8 @@ def generate_one_step_forecast(
 def generate_multi_step_forecast(
     data: pd.DataFrame,
     forecast_horizon: int,
-    target_col: str = DATA_CONFIG.target_column,
-    timestamp_col: str = DATA_CONFIG.timestamp_column
+    target_col: str = data_config.target_column,
+    timestamp_col: str = data_config.timestamp_column
 ) -> pd.DataFrame:
     """Returns a pd.DataFrame that contains a multi-step forecast for each company ID.
 
@@ -138,10 +138,10 @@ def generate_multi_step_forecast(
         data (pd.DataFrame): ML-ready dataset containing datetime features, window
         features, lag features, and the corresponding target.
         forecast_horizon (int, optional): Number of time steps (hours) to forecast into the future.
-        target_col (str, optional): Name of the column that contains the target variable.
-        Defaults to DATA_CONFIG.target_column.
+        target_col (str, optional): Name of the target variable.
+        Defaults to data_config.target_column.
         timestamp_col (str, optional): Name of the column that contains the timestamps.
-        Defaults to DATA_CONFIG.timestamp_column.
+        Defaults to data_config.timestamp_column.
 
     Returns:
         pd.DataFrame: Dataset containing the multi-step (multi-hour) forecasted energy demand
