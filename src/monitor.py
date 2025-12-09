@@ -73,9 +73,7 @@ def backtest_model(
         response: str = (
             pd.DataFrame
             .from_dict(report, orient="index", columns=["r2_model", "r2_naive"])
-            .reset_index(names="forecast_horizon")
             .rename(columns={"r2_model": "pass", "r2_naive": "fail"})
-            .drop(columns="forecast_horizon")
             .mean()
             .to_frame(name="r2_mean")
             .sort_values(by="r2_mean", ascending=False)

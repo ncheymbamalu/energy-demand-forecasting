@@ -69,7 +69,7 @@ def fetch_data(
         )
 
         # query each company's 'real-time' raw data, then pre-process and validate it, that is, ...
-        # ensure that time steps are regularly spaced, and all nulls and duplicates and removed
+        # ensure that time steps are regularly spaced, and all nulls and duplicates are removed
         cols: ListConfig = db_config.table.columns
         dfs: list[pd.DataFrame] = []
         for company_id, n_days in future_mapper.items():
