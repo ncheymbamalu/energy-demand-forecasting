@@ -1,0 +1,10 @@
+[project]
+name = "src"
+version = "0.1.0"
+description = "End-to-end project for forecasting hourly energy demand"
+readme = "README.md"
+requires-python = "==3.11.12"
+dependencies = [
+    "dvc>=3.65.0",
+    "dvc-gdrive>=3.0.1",
+]
