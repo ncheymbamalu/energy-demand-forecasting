@@ -1,0 +1,45 @@
+"""This module configures the project's paths and parameters."""
+
+from pathlib import Path, PosixPath
+
+from omegaconf import DictConfig, OmegaConf
+
+
+class Paths:
+    """A class that defines the main directories and files.
+
+    Attributes:
+        PROJECT_DIR (PosixPath): Project's root directory.
+        ARTIFACTS_DIR (PosixPath): Artifacts directory, ./artifacts/.
+        DATA_DIR (PosixPath): Data directory, ./artifacts/data/.
+        RAW_DATA (PosixPath): Raw data, ./artifacts/data/raw.parquet.
+        PROCESSED_DATA (PosixPath): Processed data, ./artifacts/data/processed.parquet.
+        ENV (PosixPath): Environment variables file, ./.env.
+        PARAMS (PosixPath): Parameters file, ./params.yaml.
+    """
+    # directories
+    PROJECT_DIR: PosixPath = Path(__file__).parent.parent.absolute().resolve()
+    ARTIFACTS_DIR: PosixPath = PROJECT_DIR / "artifacts"
+    DATA_DIR: PosixPath = ARTIFACTS_DIR / "data"
+
+    # files
+    ENV: PosixPath = PROJECT_DIR / ".env"
+    PARAMS: PosixPath = PROJECT_DIR / "params.yaml"
+    RAW_DATA: PosixPath = DATA_DIR / "raw.parquet"
+    PROCESSED_DATA: PosixPath = DATA_DIR / "processed.parquet"
+
+
+def load_params(module: str) -> DictConfig:
+    """Loads module-specific parameters from ./params.yaml.
+
+        Args:
+            module (str): Name of a user-defined module.
+
+        Returns:
+            DictConfig: Module-specific parameters in the form of user-defined
+            key-value pairs.
+    """
+    try:
+        return OmegaConf.load(Paths.PARAMS).get(module)
+    except Exception as e:
+        raise e

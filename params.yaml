@@ -1,0 +1,10 @@
+data:
+  columns:
+    - company_id
+    - timestamp_utc
+    - energy_demand_mw
+  target_column: energy_demand_mw
+  temporal_column: timestamp_utc
+  lookback: 14
+  offset_year: 2025
+  step: 4
