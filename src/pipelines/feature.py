@@ -10,27 +10,42 @@ from src.logger import logger
 def main() -> None:
     """Executes the feature pipeline."""
     try:
-        temporal_col: str = params.temporal_column
+        # load the existing data from ./artifacts/data/processed.parquet
+        existing_data: pl.DataFrame = pl.read_parquet(Paths.PROCESSED_DATA)
 
-        # load and pre-process the current batch of raw data
+        # load the current batch of raw data, then pre-process and validate
         data: pl.DataFrame = load_data().pipe(preprocess_data)
-
-        # vertically concatenate the existing pre-processed data the current batch
-        data = (
-            pl.concat((pl.read_parquet(Paths.PROCESSED_DATA), data), how="vertical")
-            .unique(subset=["company_id", temporal_col], keep="first")
-            .sort(by=["company_id", temporal_col])
-        )
-
-        # validate the vertically concatenated data
         data.pipe(validate_data)
 
-        # write the vertically concatenated data to ./artifacts/data/processed.parquet
+        # filter the current batch
+        temporal_col: str = params.temporal_column
+        data = (
+            data
+            .join(
+                other=(
+                    existing_data
+                    .group_by("company_id", maintain_order=True)
+                    .agg(pl.col(temporal_col).max().alias(f"latest_processed_{temporal_col}"))
+                ),
+                how="left",
+                on="company_id",
+                maintain_order="left"
+            )
+            .filter(pl.col(temporal_col).gt(pl.col(f"latest_processed_{temporal_col}")))
+            .select(data.columns)
+        )
+
+        # (1) vertically concatenate the existing data with the current batch
+        # (2) write to ./artifacts/data/processed.parquet
         logger.info(
             f"Updating ./{Paths.PROCESSED_DATA.relative_to(Paths.PROJECT_DIR)} with the current \
 batch of pre-processed data."
         )
-        data.write_parquet(Paths.PROCESSED_DATA)
+        (
+            pl.concat((existing_data, data), how="vertical")
+            .sort(by=["company_id", temporal_col])
+            .write_parquet(Paths.PROCESSED_DATA)
+        )
     except Exception as e:
         raise e
 
