@@ -3,7 +3,7 @@
 import polars as pl
 
 from src.config import Paths
-from src.data import load_data, params, preprocess_data, validate_data
+from src.data import load_raw_data, params, preprocess_data, validate_data
 from src.logger import logger
 
 
@@ -14,7 +14,7 @@ def main() -> None:
         existing_data: pl.DataFrame = pl.read_parquet(Paths.PROCESSED_DATA)
 
         # load the current batch of raw data, then pre-process and validate
-        data: pl.DataFrame = load_data().pipe(preprocess_data)
+        data: pl.DataFrame = load_raw_data().pipe(preprocess_data)
         data.pipe(validate_data)
 
         # filter the current batch

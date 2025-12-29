@@ -1,5 +1,5 @@
-"""This module contains data-related functionality, that is, loading, pre-processing, validating,
-transforming, and splitting.
+"""This module contains functionality for loading, pre-processing, validating, transforming, and
+splitting data.
 """
 
 from datetime import datetime, timedelta
@@ -18,11 +18,11 @@ from src.utils import encode_hour, get_current_time, get_max_lag
 params: DictConfig = load_params(Path(__file__).stem)
 
 
-def load_data(path: PosixPath | str = Paths.RAW_DATA) -> pl.DataFrame:
+def load_raw_data(path: PosixPath | str = Paths.RAW_DATA) -> pl.DataFrame:
     """Loads raw data from path.
 
     Args:
-        path (PosixPath | str): Raw data file path. Defaults to Paths.RAW_DATA
+        path (PosixPath | str, optional): Raw data file path. Defaults to Paths.RAW_DATA
 
     Returns:
         pl.DataFrame: Raw data.
@@ -125,6 +125,49 @@ def validate_data(data: pl.DataFrame) -> None:
         assert data.is_duplicated().sum() == 0, messages.get("duplicates")
         assert data.null_count().sum_horizontal()[0] == 0, messages.get("nulls")
         logger.info("The pre-processed data has been validated!")
+    except Exception as e:
+        raise e
+
+
+def load_preprocessed_data(path: PosixPath | str = Paths.PROCESSED_DATA) -> pl.DataFrame:
+    """Loads the latest pre-processed data from path.
+
+    Args:
+        path (PosixPath | str, optional): Pre-processed data file path.
+        Defaults to Paths.PROCESSED_DATA
+
+    Returns:
+        pl.DataFrame: Latest pre-processed data.
+    """
+    try:
+        temporal_col: str = params.temporal_column
+        lookback: int = params.lookback
+        data: pl.DataFrame = (
+            pl.read_parquet(path)
+            .join(
+                other=(
+                    pl.read_parquet(path)
+                    .group_by("company_id", maintain_order=True)
+                    .agg(pl.col(temporal_col).max())
+                    .select(
+                        "company_id",
+                        (pl.col(temporal_col) - pl.duration(days=lookback))
+                        .alias(f"earliest_{temporal_col}")
+                    )
+                ),
+                how="left",
+                on="company_id",
+                maintain_order="left"
+            )
+            .filter(pl.col(temporal_col).ge(pl.col(f"earliest_{temporal_col}")))
+            .drop(f"earliest_{temporal_col}")
+        )
+        logger.info(
+            f"Loading the pre-processed data between \
+<green>{str(data[temporal_col].min())}</green> and \
+<green>{str(data[temporal_col].max())}</green>, inclusive."
+        )
+        return data
     except Exception as e:
         raise e
 

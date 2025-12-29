@@ -19,6 +19,5 @@ wheels/
 .python-version
 credentials.json
 .ruff_cache/
-catboost_info/
 logs/
 /notebooks
