@@ -302,15 +302,14 @@ def save_model_metadata(
         logger.info(
             f"Saving the model's metadata to ./{Path(path).relative_to(Paths.PROJECT_DIR)}."
         )
-        (
+        if Path(path).exists():
             (
                 pl.concat((pl.read_parquet(path), data), how="vertical")
                 .sort(by="when_trained", descending=True)
                 .write_parquet(path)
             )
-            if Path(path).exists()
-            else data.write_parquet(path)
-        )
+        else:
+            data.write_parquet(path)
     except Exception as e:
         raise e
 
