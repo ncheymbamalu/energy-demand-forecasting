@@ -17,11 +17,11 @@ from src.monitor import backtest_model
 def main() -> None:
     """Executes the training pipeline."""
     try:
-        if backtest_model():
+        data: pl.DataFrame = load_preprocessed_data().pipe(transform_data)
+        if backtest_model(data):
             logger.info("The current forecasting model is fine.")
         else:
             logger.info("The current forecasting model is unsatisfactory and will be replaced.")
-            data: pl.DataFrame = load_preprocessed_data().pipe(transform_data)
             model, metric = tune_model(data, build_model(data))
             data = create_model_metadata(data, model, metric)
             save_model(model)

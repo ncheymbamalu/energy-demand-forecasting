@@ -8,27 +8,28 @@ import polars as pl
 from omegaconf import DictConfig
 
 from src.config import load_params
-from src.data import load_preprocessed_data
 from src.data import params as data_params
-from src.data import split_data, transform_data
+from src.data import split_data
 from src.inference import get_multi_step_forecast
 from src.utils import compute_evaluation_metrics
 
 params: DictConfig = load_params(Path(__file__).stem)
 
 
-def backtest_model():
+def backtest_model(data: pl.DataFrame):
     """Backtests the current forecasting model on historical data, that is,
     the previous 12 time steps, and evaluates its R² against a user-defined
     threshold and the R² produced by the naive forecast.
+
+    Args:
+        data (pl.DataFrame): ML-ready data, that is, data that's been pre-processed,
+        validated, and converted to lag features, window features (average lags),
+        datetime features, and corresponding labels.
 
     Returns:
         bool: Output that determines if the current forecasting model is sufficient.
     """
     try:
-        # load and transform the data
-        data: pl.DataFrame = load_preprocessed_data().pipe(transform_data)
-
         # get the threshold, target, and temporal column
         threshold: float = params.threshold
         target: str = data_params.target_column
