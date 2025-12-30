@@ -36,3 +36,5 @@ model:
       - learning_rate
       - min_child_weight
       - reg_alpha
+monitor:
+  threshold: 0.8

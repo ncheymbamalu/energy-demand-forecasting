@@ -1,4 +1,4 @@
-.PHONY: install check clean features update_features
+.PHONY: install check clean features update_features train update_train
 
 install: pyproject.toml
 	uv sync
@@ -16,5 +16,15 @@ update_features:
 	dvc add ./artifacts && \
 	git add artifacts.dvc && \
 	git commit -m "Executing the feature pipeline and updating ./artifacts.dvc" && \
+	dvc push && \
+	git push
+
+train:
+	dvc pull && uv run python -Wignore src/pipelines/train.py
+
+update_train:
+	dvc add ./artifacts && \
+	git add artifacts.dvc && \
+	git commit -m "Executing the training pipeline and updating ./artifacts.dvc" && \
 	dvc push && \
 	git push

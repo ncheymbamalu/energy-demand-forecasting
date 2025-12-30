@@ -199,7 +199,7 @@ def plot_time_series_splits(
 
         # plot the company ID's time series split
         fig, ax = plt.subplots(k, figsize=(20, 14), sharex=True)
-        fig.suptitle(f"Hourly Energy Demand, Company ID: {company_id}", fontsize=16)
+        fig.suptitle(f"Walk-Forward Validation, Company ID: {company_id}", fontsize=16)
         fig.supxlabel("Datetime (UTC)", fontsize=12)
         for fold, (train_split, fold_split) in enumerate(zip(train_splits, fold_splits)):
             (

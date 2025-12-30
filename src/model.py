@@ -228,6 +228,7 @@ def save_model(model: LGBMRegressor | XGBRegressor, path: PosixPath | str = Path
         path (PosixPath | str, optional): Trained model file path. Defaults to Paths.MODEL
     """
     try:
+        logger.info(f"Saving the model to ./{Path(path).relative_to(Paths.PROJECT_DIR)}.")
         if not Path(path).parent.exists():
             Path(path).parent.mkdir(parents=True, exist_ok=True)
         with open(path, "wb") as file:
@@ -298,6 +299,9 @@ def save_model_metadata(
         Defaults to Paths.MODELS_METADATA.
     """
     try:
+        logger.info(
+            f"Saving the model's metadata to ./{Path(path).relative_to(Paths.PROJECT_DIR)}."
+        )
         (
             (
                 pl.concat((pl.read_parquet(path), data), how="vertical")
