@@ -18,7 +18,9 @@ from omegaconf import DictConfig, ListConfig, OmegaConf
 from xgboost import XGBRegressor
 
 from src.config import Paths, load_params
-from src.data import load_preprocessed_data, params as data_params, transform_data
+from src.data import load_preprocessed_data
+from src.data import params as data_params
+from src.data import transform_data
 from src.logger import logger
 from src.utils import compute_evaluation_metrics, get_time_series_splits
 

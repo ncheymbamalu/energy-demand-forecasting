@@ -82,11 +82,11 @@ def encode_hour(hour: int, func: str) -> float:
         assert func.lower() in ("sine", "cosine"), "Invalid argument for the 'func' parameter. \
 Valid arguments are 'sine' and 'cosine'."
         period: int = 24
-        if func == "sine":
-            encoded_hour: np.float64 = np.sin(hour / period * 2 * np.pi)
-        else:
-            encoded_hour = np.cos(hour / period * 2 * np.pi)
-        return round(encoded_hour.item(), 2)
+        encoded_hour: np.float64 = (
+            np.sin(hour / period * 2 * np.pi) if func == "sine"
+            else np.cos(hour / period * 2 * np.pi)
+        )
+        return round(encoded_hour.item(), 4)
     except Exception as e:
         raise e
 

@@ -7,6 +7,7 @@ data:
   temporal_column: timestamp_utc
   lookback: 14
   offset_year: 2025
+  max_lag: 32
   step: 4
 model:
   k: 5

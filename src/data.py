@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 from src.config import Paths, load_params
 from src.logger import logger
-from src.utils import encode_hour, get_current_time, get_max_lag
+from src.utils import encode_hour, get_current_time
 
 params: DictConfig = load_params(Path(__file__).stem)
 
@@ -121,7 +121,7 @@ def validate_data(data: pl.DataFrame) -> None:
             "nulls": "There are null values!"
         }
         if Paths.PROCESSED_DATA.exists():
-            assert data.schema == pl.read_parquet(Paths.PROCESSED_DATA).schema, messages["schema"]
+            assert data.schema == pl.scan_parquet(Paths.PROCESSED_DATA).schema, messages["schema"]
         assert data.is_duplicated().sum() == 0, messages.get("duplicates")
         assert data.null_count().sum_horizontal()[0] == 0, messages.get("nulls")
         logger.info("The pre-processed data has been validated!")
@@ -189,7 +189,7 @@ def transform_data(data: pl.DataFrame) -> pl.DataFrame:
         target: str = params.target_column
         temporal_col: str = params.temporal_column
         step = start = params.step
-        max_lag: int = get_max_lag(data, target, step)
+        max_lag: int = params.max_lag
 
         # an empty list to store the transformed pl.DataFrames, one per company ID
         transformed_dfs: list[pl.DataFrame] = []
