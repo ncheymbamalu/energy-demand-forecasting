@@ -52,7 +52,7 @@ def preprocess_data(data: pl.DataFrame) -> pl.DataFrame:
         logger.info(
             f"Pre-processing the raw data between \
 <green>{start.strftime('%Y-%m-%d %H:%M:%S')}</green> and \
-<green>{current.strftime('%Y-%m-%d %H:%M:%S')}</green> inclusive."
+<green>{current.strftime('%Y-%m-%d %H:%M:%S')}</green>, inclusive."
         )
         data = (
             data
@@ -142,11 +142,12 @@ def load_preprocessed_data(path: PosixPath | str = Paths.PROCESSED_DATA) -> pl.D
     try:
         temporal_col: str = params.temporal_column
         lookback: int = params.lookback
-        data: pl.DataFrame = (
-            pl.read_parquet(path)
+        data: pl.DataFrame = pl.read_parquet(path)
+        data = (
+            data
             .join(
                 other=(
-                    pl.read_parquet(path)
+                    data
                     .group_by("company_id", maintain_order=True)
                     .agg(pl.col(temporal_col).max())
                     .select(
