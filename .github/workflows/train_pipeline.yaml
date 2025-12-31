@@ -60,7 +60,7 @@ jobs:
 
       - name: Commit and push changes
         if: env.CHANGES == 'true'
-        run: make update_train
+        run: make update_model_artifacts
 
       - name: Clean up repo
         run: |

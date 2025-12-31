@@ -17,6 +17,7 @@ class Paths:
         PARAMS (PosixPath): Parameters file, ./params.yaml.
         RAW_DATA (PosixPath): Raw data, ./artifacts/data/raw.parquet.
         PROCESSED_DATA (PosixPath): Processed data, ./artifacts/data/processed.parquet.
+        FORECAST_DATA (PosixPath): Forecasted data, ./artifact/data/forecast.parquet
         MODEL (PosixPath): Trained model file, ./artifacts/model/model.pkl.
         MODELS_METADATA (PosixPath): Trained models metadata file,
         ./artifacts/model/metadata.parquet
@@ -32,6 +33,7 @@ class Paths:
     PARAMS: PosixPath = PROJECT_DIR / "params.yaml"
     RAW_DATA: PosixPath = DATA_DIR / "raw.parquet"
     PROCESSED_DATA: PosixPath = DATA_DIR / "processed.parquet"
+    FORECAST_DATA: PosixPath = DATA_DIR / "forecast.parquet"
     MODEL: PosixPath = MODEL_DIR / "model.pkl"
     MODELS_METADATA: PosixPath = MODEL_DIR / "metadata.parquet"
 

@@ -1,4 +1,4 @@
-.PHONY: install check clean features update_features train update_train
+.PHONY: install check clean data update_data_artifacts train update_model_artifacts
 
 install: pyproject.toml
 	uv sync
@@ -9,22 +9,24 @@ check: .venv
 clean:
 	rm -rf `find . -type d -name __pycache__` ; rm -rf .ruff_cache
 
-features:
-	dvc pull && uv run python -Wignore src/pipelines/feature.py
+data:
+	dvc pull && \
+	uv run python -Wignore src/pipelines/feature.py && \
+	uv run python -Wignore src/pipelines/inference.py
 
-update_features:
+update_data_artifacts:
 	dvc add ./artifacts && \
 	git add artifacts.dvc && \
-	git commit -m "Executing the feature pipeline and updating ./artifacts.dvc" && \
+	git commit -m "Executing the feature and inference pipelines" && \
 	dvc push && \
 	git push
 
 train:
 	dvc pull && uv run python -Wignore src/pipelines/train.py
 
-update_train:
+update_model_artifacts:
 	dvc add ./artifacts && \
 	git add artifacts.dvc && \
-	git commit -m "Executing the training pipeline and updating ./artifacts.dvc" && \
+	git commit -m "Executing the training pipeline" && \
 	dvc push && \
 	git push

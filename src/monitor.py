@@ -10,7 +10,7 @@ from omegaconf import DictConfig
 from src.config import load_params
 from src.data import params as data_params
 from src.data import split_data
-from src.inference import get_multi_step_forecast
+from src.forecast import get_multi_step_forecast
 from src.utils import compute_evaluation_metrics
 
 params: DictConfig = load_params(Path(__file__).stem)

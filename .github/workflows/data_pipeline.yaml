@@ -1,4 +1,4 @@
-name: feature-pipeline
+name: data-pipeline
 
 on:
   schedule:
@@ -8,7 +8,7 @@ on:
 
 jobs:
 
-  feature_pipeline:
+  data_pipeline:
     runs-on: ubuntu-latest
 
     permissions:
@@ -52,7 +52,7 @@ jobs:
           git config user.email "github-actions@github.com"
 
       - name: Execute pipeline
-        run: make features
+        run: make data
 
       - name: Check for changes
         id: dvc-check
@@ -60,7 +60,7 @@ jobs:
 
       - name: Commit and push changes
         if: env.CHANGES == 'true'
-        run: make update_features
+        run: make update_data_artifacts
 
       - name: Clean up repo
         run: |
