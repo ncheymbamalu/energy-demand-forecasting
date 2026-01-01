@@ -1,4 +1,4 @@
-name: train-pipeline
+name: monitor-pipeline
 
 on:
   schedule:
@@ -8,7 +8,7 @@ on:
 
 jobs:
 
-  train_pipeline:
+  monitor_pipeline:
     runs-on: ubuntu-latest
 
     permissions:
@@ -52,7 +52,7 @@ jobs:
           git config user.email "github-actions@github.com"
 
       - name: Execute pipeline
-        run: make train
+        run: make monitor_pipeline
 
       - name: Check for changes
         id: dvc-check
@@ -60,7 +60,7 @@ jobs:
 
       - name: Commit and push changes
         if: env.CHANGES == 'true'
-        run: make update_model_artifacts
+        run: make update_artifacts
 
       - name: Clean up repo
         run: |

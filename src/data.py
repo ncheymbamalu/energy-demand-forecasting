@@ -370,3 +370,20 @@ def split_data(
         return pl.concat(train_dfs, how="vertical"), pl.concat(test_dfs, how="vertical")
     except Exception as e:
         raise e
+
+
+def load_forecasts(path: PosixPath | str = Paths.FORECAST_DATA) -> pl.DataFrame:
+    """Loads the forecast data, that is, the hourly energy demand predictions
+    for all company IDs, from path.
+
+    Args:
+        path (PosixPath | str, optional): Forecast data file path.
+        Defaults to Paths.FORECAST_DATA
+
+    Returns:
+        pl.DataFrame: Forecast data."""
+    try:
+        logger.info("Loading the forecasts.")
+        return pl.read_parquet(path)
+    except Exception as e:
+        raise e
