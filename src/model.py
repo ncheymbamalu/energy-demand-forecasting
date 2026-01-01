@@ -327,7 +327,7 @@ def load_model() -> LGBMRegressor | XGBRegressor:
         # load Paths.MODEL, if it exits, otherwise start the model building process
         if Paths.MODEL.exists():
             with open(Paths.MODEL, "rb") as file:
-                model: XGBRegressor = pickle.load(file)
+                model: LGBMRegressor | XGBRegressor = pickle.load(file)
         else:
             logger.info(
                 f"./{Paths.MODEL.relative_to(Paths.PROJECT_DIR)} not found. Starting the model \
