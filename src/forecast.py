@@ -113,8 +113,8 @@ def get_one_step_forecast(data: pl.DataFrame) -> pl.DataFrame:
             x = pl.concat((datetime_data, window_data, lag_data), how="horizontal")
 
             # compute the forecast for the next time step
-            yhat: np.float64 = max(0.0, round(model.predict(x.select(features))[0], 4))
-            x = x.with_columns(pl.lit(yhat.item()).alias("forecast"))
+            yhat: np.floating = model.predict(x.select(features))[0]
+            x = x.with_columns(pl.lit(max(0.0, round(yhat.item(), 4))).alias("forecast"))
 
             # add the record to the 'dfs' list
             dfs.append(x)
