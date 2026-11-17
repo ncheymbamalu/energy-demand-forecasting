@@ -18,6 +18,7 @@ wheels/
 .idea
 .python-version
 credentials.json
+.pytest_cache/
 .ruff_cache/
 logs/
 /notebooks
