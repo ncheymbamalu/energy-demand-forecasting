@@ -1,0 +1,64 @@
+name: etl-pipeline
+
+on:
+  schedule:
+    - cron: "17 14,20 * * *"  # runs twice daily, 14:17 and 20:17 UTC (09:17 and 15:17 ET in winter)
+  workflow_dispatch:
+
+concurrency:
+  group: etl-pipeline
+  cancel-in-progress: false
+
+jobs:
+  etl_pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Create gdrive_credentials.json
+        env:
+          GDRIVE_CREDENTIALS: ${{ secrets.GDRIVE_CREDENTIALS }}
+        run: printf '%s' "$GDRIVE_CREDENTIALS" > gdrive_credentials.json
+
+      - name: Configure DVC remote credentials
+        run: >
+          uv run dvc remote modify gdrive_remote --local
+          gdrive_user_credentials_file gdrive_credentials.json
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+
+      - name: Execute ETL pipeline
+        env:
+          EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
+        run: |
+          uv run dvc pull
+          uv run python src/energy_demand_forecasting/pipelines/etl.py
+
+      - name: Check for changes
+        run: uv run dvc status --quiet || echo "CHANGES=true" >> "$GITHUB_ENV"
+
+      - name: Commit and push changes
+        if: env.CHANGES == 'true'
+        run: |
+          uv run dvc add ./artifacts
+          git add artifacts.dvc
+          git commit -m "Updating ./artifacts/data/processed.parquet ($(date -u +'%Y-%m-%d %H:%M UTC'))"
+          uv run dvc push
+          git push

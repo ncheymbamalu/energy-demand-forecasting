@@ -1,0 +1,28 @@
+data:
+  eia:
+    base_url: https://api.eia.gov/v2/
+    endpoints:
+      subregion_demand: electricity/rto/region-sub-ba-data/data/
+      subregion_ids: electricity/rto/region-sub-ba-data/facet/subba
+    balancing_authority: PJM
+    subregion_ids:
+      - AE
+      - AEP
+      - AP
+      - ATSI
+      - BC
+      - CE
+      - DAY
+      - DEOK
+      - DOM
+      - DPL
+      - DUQ
+      - EKPC
+      - JC
+      - ME
+      - PE
+      - PEP
+      - PL
+      - PN
+      - PS
+      - RECO

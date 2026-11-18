@@ -1,4 +1,4 @@
-.PHONY: sync clean check fix
+.PHONY: sync clean check fix etl
 
 sync: .venv
 	@echo "🔄 Synchronizing virtual environment with uv..."
@@ -18,3 +18,7 @@ check: .venv
 fix: .venv
 	@echo "🛠️ Fixing lint issues with Ruff..."
 	@uv run ruff check --fix src
+
+etl:
+	uv run dvc pull
+	uv run python src/energy_demand_forecasting/pipelines/etl.py
